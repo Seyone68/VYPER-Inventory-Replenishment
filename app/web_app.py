@@ -194,10 +194,11 @@ if load_data:
         plt.ylabel('Quantity')
         st.pyplot(plt)
 
-        # Visualize Sales by Month
+        # Visualize Sales by Month - 'month-year' format in ascending order
+        df_sales['Month_Year'] = df_sales['Date'].dt.to_period('M')
         st.subheader('Sales by Month')
         plt.figure(figsize=(15, 8))
-        sns.barplot(x=df_sales['Date'].dt.month, y='Full Total', data=df_sales, ci=None, estimator=sum, color='#9575cd')
+        sns.barplot(x=df_sales['Month_Year'], y='Full Total', data=df_sales, ci=None, estimator=sum, color='#9575cd', order=sorted(df_sales['Month_Year']))
         # Display value on top of each bar
         for p in plt.gca().patches:
             plt.gca().annotate(f"{int(p.get_height()):,}", (p.get_x() + p.get_width() / 2., p.get_height()), 
@@ -351,7 +352,14 @@ if load_data:
         restock_skus = restock_skus[~restock_skus['SKU'].str.startswith('DERFB')]
         # Restock quantity not required for SKUs ends with '- R'
         restock_skus = restock_skus[~restock_skus['SKU'].str.endswith('- R')].reset_index(drop=True)
-        st.dataframe(restock_skus[['SKU', 'Product Name', 'Last 30 Days Sales','Current Stock', 'Restock Quantity']])
+        
+        # Highlight the restock quantity
+        def highlight_restock_qty(x):
+            color = 'background-color: #2980b9' if x['Restock Quantity'] > 0 else ''
+            return [color for _ in x]
+        
+        # Display the restock recommendations
+        st.dataframe(restock_skus[['SKU', 'Product Name', 'Last 30 Days Sales','Current Stock', 'Restock Quantity']].style.apply(highlight_restock_qty, axis=1))
 
         # Convert DataFrame to CSV string
         csv_buffer = io.StringIO()
